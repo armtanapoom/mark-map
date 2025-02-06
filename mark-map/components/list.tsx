@@ -1,27 +1,29 @@
-
+import { Navigation } from 'lucide-react';
 
 type Location = {
     id: string
     properties: {
         ct_tn: string;
-        latitude: number;
-        longitude: number;
+        latitude: string;
+        longitude: string;
     };
 };
 
-export default function List({ locations, page }: { locations: Location[] | [], page: number }) {
+type TypeSelectLocation = (item: Location) => void;
 
-
-
+export default function ListView({ locations, selectLocation }: { locations: Location[] | [], selectLocation: TypeSelectLocation }) {
     return (
         <>
-            <p>ListView page:{page}</p>
             {locations.map((item: Location, index: number) => {
                 return (
-                    <div className='border rounded-xl p-4 my-2' key={index}>
+                    <div className='flex justify-between border rounded-xl p-4 my-2' key={index} onClick={() => { selectLocation(item) }}>
                         <div>
                             <strong>{item.properties.ct_tn}</strong>
                             <p>Coordinates: {item.properties.latitude}, {item.properties.longitude}</p>
+                        </div>
+                        <div>
+                            <Navigation style={{ cursor: 'pointer' }} color="#3e9392" />
+
                         </div>
                     </div>
 
