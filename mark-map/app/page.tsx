@@ -1,5 +1,5 @@
 "use client"
-import { Search, Map, List } from 'lucide-react';
+import { Map, List } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Pagination from '@mui/material/Pagination';
 import axios from "axios";
@@ -24,15 +24,31 @@ export default function Home() {
   const [length, setLength] = useState(0)
   const [locations, setLocations] = useState<Location[] | []>([])
   const [totalLocation, setTotalLocation] = useState(0)
-  const [perPage, setPerPage] = useState(5)
+  const [perPage, setPerPage] = useState(50)
   const [offsetData, setOffsetData] = useState(0)
   const [mapCenter, setMapCenter] = useState<[number, number]>([0, 0])
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
+  const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null)
+
+  useEffect(() => {
+    getMyLocation()
+  }, [])
+
 
   useEffect(() => {
     setOffsetData((page - 1) * perPage)
     getLocation()
+
   }, [page, perPage])
+
+  const getMyLocation = () => {
+    navigator.geolocation.getCurrentPosition(function (position) {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      if (longitude && latitude) {
+        setCurrentLocation([longitude, latitude])
+      }
+    })
+  }
 
   const getLocation = async () => {
     setIsLoading(true)
@@ -66,7 +82,6 @@ export default function Home() {
   };
 
   const selectLocation = (item: Location) => {
-    setSelectedLocation(item)
     const lat = parseFloat(item.properties.latitude)
     const lng = parseFloat(item.properties.longitude)
     setMapCenter([lng, lat])
@@ -88,28 +103,23 @@ export default function Home() {
             <div className="label">
               <span className="label-text">จำนวนรายการต่อหน้า</span>
             </div>
-            <select className="select select-bordered" onChange={(e) => setPerPage(Number(e.target.value))}>
+            <select className="select select-bordered" onChange={(e) => setPerPage(Number(e.target.value))} value={perPage}>
               <option value="5">5</option>
               <option value="10">10</option>
               <option value="50">50</option>
               <option value="100">100</option>
+              <option value="200">200</option>
             </select>
           </label>
         </div>
       </div>
-      <div className=" pb-4">
-        <label className="input input-bordered flex items-center gap-2">
-          <input type="text" className="grow" placeholder="Search" />
-          <Search className="h-4 w-4 opacity-70" />
-        </label>
-      </div>
       <div className='flex justify-between items-center'>
+        <div>
+          <p>ลำดับที่ {offsetData + 1} - {offsetData + perPage}</p>
+        </div>
         <div className="join">
           <button className="join-item btn" onClick={() => setViewType('list')}><List />List View</button>
           <button className="join-item btn" onClick={() => setViewType('map')}><Map />Map View</button>
-        </div>
-        <div>
-          <p>ลำดับที่ {offsetData + 1} - {offsetData + perPage}</p>
         </div>
 
       </div>
@@ -118,16 +128,17 @@ export default function Home() {
           <div>
             <ListView locations={locations} selectLocation={selectLocation} />
           </div>
-          <div className='flex justify-center mt-4'>
 
-            <Pagination count={length} page={page} onChange={handleChange} />
-          </div>
         </>
       ) : (
         <div className='py-6'>
-          <MapView locations={locations} mapCenter={mapCenter} selectedLocation={selectedLocation} />
+          <MapView locations={locations} mapCenter={mapCenter} currentLocation={currentLocation} />
         </div>
       )}
+      <div className='flex justify-center mt-4'>
+
+        <Pagination count={length} page={page} onChange={handleChange} />
+      </div>
     </div>
   );
 }

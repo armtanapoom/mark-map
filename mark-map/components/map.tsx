@@ -12,7 +12,7 @@ type Location = {
     };
 };
 
-export default function MapView({ locations, mapCenter, selectedLocation }: { locations: Location[] | [], mapCenter?: [number, number], selectedLocation?: Location | null }) {
+export default function MapView({ locations, mapCenter, currentLocation }: { locations: Location[] | [], mapCenter?: [number, number], currentLocation: [number, number] | null }) {
 
     const mapRef = useRef<maplibregl.Map | null>(null);
 
@@ -37,23 +37,34 @@ export default function MapView({ locations, mapCenter, selectedLocation }: { lo
                 .addTo(map);
         });
         map.setZoom(5);
+        if (currentLocation) {
+            const markerElement = document.createElement("div");
+            markerElement.className = 'marker';
+            markerElement.style.width = "40px";
+            markerElement.style.height = "40px";
+            markerElement.style.backgroundImage = "url('/user-location.png')";
+            markerElement.style.backgroundSize = "cover";
+
+            new Marker({ element: markerElement })
+                .setLngLat(currentLocation)
+                .setPopup(new Popup().setHTML(`
+                    <h1>My Location</h1>
+                `))
+                .addTo(map);
+        }
 
         return () => map.remove();
-    }, [locations]);
+    }, [locations, currentLocation]);
 
     useEffect(() => {
         if (!mapRef.current || !mapCenter) return;
         const map = mapRef.current;
-        map.flyTo({ center: mapCenter, zoom: 5 });
 
-        new Popup({ closeOnClick: false })
-            .setLngLat(mapCenter)
-            .setHTML(`
-                <h1>${selectedLocation ? selectedLocation.properties.ct_tn : '-'}</h1><br/>
-                Coordinates:: Lat ${mapCenter[1]}, Lng: ${mapCenter[0]}</p>
-            `)
-            .addTo(map);
-    }, [mapCenter, selectedLocation]);
+
+        map.flyTo({ center: mapCenter, zoom: 8 });
+
+    }, [mapCenter]);
+
 
     return (
         <>
