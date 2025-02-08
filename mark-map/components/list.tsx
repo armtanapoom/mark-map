@@ -1,13 +1,18 @@
-import { Navigation } from 'lucide-react';
+import { Navigation, Globe, ArrowUpRight, BookPlus } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import Chip from '@mui/material/Chip';
 
 type Location = {
     id: string
     properties: {
+        ct_en: string;
         ct_tn: string;
         latitude: string;
         longitude: string;
     };
+    geometry: {
+        coordinates: [number, number]
+    }
 };
 
 type TypeSelectLocation = (item: Location) => void;
@@ -42,23 +47,30 @@ export default function ListView({ locations, selectLocation }: { locations: Loc
 
         const distance = R * c;
 
-        return distance.toFixed(2);
+        return `${distance.toFixed(2)} KM.`;
     }
     return (
         <>
             {locations.map((item: Location, index: number) => {
                 return (
-                    <div className='flex justify-between border rounded-xl p-4 my-2' key={index} onClick={() => { selectLocation(item) }}>
-                        <div>
-                            <strong>{item.properties.ct_tn}</strong>
-                            <p>Coordinates: {item.properties.latitude}, {item.properties.longitude}</p>
+                    <div className='flex justify-between border rounded-xl p-4 my-4 hover:bg-blue-100' key={index} >
+                        <div className=''>
+                            <strong className='pb-1 flex'><Globe color="#2563eb" className='mr-4' />{item.properties.ct_tn}</strong>
+                            <div className='pb-1 flex py-2'><Navigation /><p className='px-4'>{`latitude : ${item.geometry.coordinates[1].toFixed(6)}, longitude : ${item.geometry.coordinates[0].toFixed(6)}`}</p></div>
+                            <div className='pb-1 flex py-2'><BookPlus /><a
+                                className="px-4 text-blue-500 underline"
+                                href={`https://www.google.com/search?q=${item.properties.ct_tn}`}
+                                target="_blank"
+                            >
+                                ข้อมูลเพิ่มเติม
+                            </a></div>
                         </div>
-                        <div className='grid flex flex-col justify-end justify-items-end content-start items-end'>
-                            <Navigation style={{ cursor: 'pointer' }} color="#3e9392" />
+                        <div className=' flex  items-center'>
                             {myLocation && (
-                                <p>ระยะห่างประมาณ {calculateDistance(parseFloat(item.properties.latitude), parseFloat(item.properties.longitude))} KM.</p>
+                                <Chip className='mx-4' label={calculateDistance(item.geometry.coordinates[1], item.geometry.coordinates[0])} color="primary" variant="outlined" />
 
                             )}
+                            <ArrowUpRight style={{ cursor: 'pointer' }} color="#2563eb" onClick={() => { selectLocation(item) }} />
                         </div>
                     </div>
 

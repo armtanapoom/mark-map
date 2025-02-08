@@ -1,0 +1,22 @@
+{
+  "version": 8,
+  "sources": {
+    "osm": {
+      "type": "raster",
+      "tiles": ["https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      "tileSize": 256
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": { "background-color": "#ffff" }
+    },
+    {
+      "id": "water",
+      "type": "raster",
+      "source": "osm"
+    }
+  ]
+}

@@ -10,10 +10,14 @@ import Loading from '@/components/loading';
 type Location = {
   id: string
   properties: {
+    ct_en: string;
     ct_tn: string;
     latitude: string;
     longitude: string;
   };
+  geometry: {
+    coordinates: [number, number]
+  }
 };
 
 export default function Home() {
@@ -24,7 +28,7 @@ export default function Home() {
   const [length, setLength] = useState(0)
   const [locations, setLocations] = useState<Location[] | []>([])
   const [totalLocation, setTotalLocation] = useState(0)
-  const [perPage, setPerPage] = useState(50)
+  const [perPage, setPerPage] = useState(200)
   const [offsetData, setOffsetData] = useState(0)
   const [mapCenter, setMapCenter] = useState<[number, number]>([0, 0])
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null)
@@ -44,6 +48,8 @@ export default function Home() {
     navigator.geolocation.getCurrentPosition(function (position) {
       const latitude = position.coords.latitude;
       const longitude = position.coords.longitude;
+      console.log("current location : lng :", longitude, " lat :", latitude);
+
       if (longitude && latitude) {
         setCurrentLocation([longitude, latitude])
       }
@@ -59,9 +65,13 @@ export default function Home() {
         setTotalLocation(response.data.numberMatched)
         setLocations(response.data.features)
         const lastData = response.data.features[response.data.features.length - 1]
-        const lat = parseFloat(lastData.properties.latitude)
-        const lng = parseFloat(lastData.properties.longitude)
-        setMapCenter([lng, lat])
+        const lat = parseFloat(lastData.geometry.coordinates[1])
+        const lng = parseFloat(lastData.geometry.coordinates[0])
+        if (lat && lng) {
+          setMapCenter([lng, lat])
+        } else {
+          setMapCenter(currentLocation ?? [16.4438628, 102.737692])
+        }
         const countLength = response.data.numberMatched / perPage;
 
         if (countLength >= 1) {
@@ -82,26 +92,29 @@ export default function Home() {
   };
 
   const selectLocation = (item: Location) => {
-    const lat = parseFloat(item.properties.latitude)
-    const lng = parseFloat(item.properties.longitude)
-    setMapCenter([lng, lat])
+    const lat = item.geometry.coordinates[1]
+    const lng = item.geometry.coordinates[0]
+    if (lat && lng) {
+      setMapCenter([lng, lat])
+    } else {
+      setMapCenter(currentLocation ?? [16.4438628, 102.737692])
+    }
     setViewType('map')
 
   }
 
   return (
-    <div className='pb-10 pt-5 px-6 md:px-10'>
-      <Loading isLoading={isLoading} />
-      <div className="flex justify-between items-center pb-10">
+    <>
+      <div className="flex justify-between items-center p-10 bg-gradient-to-r from-blue-50 to-blue-100">
         <div>
           <h1 className="text-2xl">Mark Map</h1>
-          <p>total location : {totalLocation}</p>
+          <p className='text-blue-600'>total location : {totalLocation.toLocaleString()}</p>
         </div>
         <div>
 
           <label className="form-control w-full max-w-xs">
             <div className="label">
-              <span className="label-text">จำนวนรายการต่อหน้า</span>
+              <span className="label-text text-blue-600">จำนวนรายการต่อหน้า</span>
             </div>
             <select className="select select-bordered" onChange={(e) => setPerPage(Number(e.target.value))} value={perPage}>
               <option value="5">5</option>
@@ -109,36 +122,40 @@ export default function Home() {
               <option value="50">50</option>
               <option value="100">100</option>
               <option value="200">200</option>
+              <option value="500">500</option>
             </select>
           </label>
         </div>
       </div>
-      <div className='flex justify-between items-center'>
-        <div>
-          <p>ลำดับที่ {offsetData + 1} - {offsetData + perPage}</p>
-        </div>
-        <div className="join">
-          <button className="join-item btn" onClick={() => setViewType('list')}><List />List View</button>
-          <button className="join-item btn" onClick={() => setViewType('map')}><Map />Map View</button>
-        </div>
-
-      </div>
-      {viewType == 'list' ? (
-        <>
+      <div className='pb-10 pt-5 px-6 md:px-10'>
+        <Loading isLoading={isLoading} />
+        <div className='flex justify-between items-center'>
           <div>
-            <ListView locations={locations} selectLocation={selectLocation} />
+            <p>ลำดับที่ {offsetData + 1} - {offsetData + perPage}</p>
+          </div>
+          <div className="join">
+            <button className="join-item btn" onClick={() => setViewType('list')}><List />List View</button>
+            <button className="join-item btn" onClick={() => setViewType('map')}><Map />Map View</button>
           </div>
 
-        </>
-      ) : (
-        <div className='py-6'>
-          <MapView locations={locations} mapCenter={mapCenter} currentLocation={currentLocation} />
         </div>
-      )}
-      <div className='flex justify-center mt-4'>
+        {viewType == 'list' ? (
+          <>
+            <div>
+              <ListView locations={locations} selectLocation={selectLocation} />
+            </div>
 
-        <Pagination count={length} page={page} onChange={handleChange} />
+          </>
+        ) : (
+          <div className='py-6'>
+            <MapView locations={locations} mapCenter={mapCenter} currentLocation={currentLocation} />
+          </div>
+        )}
+        <div className='flex justify-center mt-4'>
+
+          <Pagination count={length} page={page} onChange={handleChange} />
+        </div>
       </div>
-    </div>
+    </>
   );
 }
