@@ -1,10 +1,10 @@
 "use client"
-import { Map, List } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Map, List, Route } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import Pagination from '@mui/material/Pagination';
 import axios from "axios";
 import ListView from "../components/list"
-import MapView from '@/components/map';
+import MapView, { MapViewRef } from '@/components/map';
 import Loading from '@/components/loading';
 
 type Location = {
@@ -32,6 +32,7 @@ export default function Home() {
   const [offsetData, setOffsetData] = useState(0)
   const [mapCenter, setMapCenter] = useState<[number, number]>([0, 0])
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null)
+  const mapRef = useRef<MapViewRef>(null)
 
   useEffect(() => {
     getMyLocation()
@@ -103,6 +104,18 @@ export default function Home() {
 
   }
 
+  const toRounting = () => {
+    mapRef.current?.toRouting()
+  }
+
+  const setNewCenter = (location: Location) => {
+    console.log("setNewCenter", location);
+    console.log([location.geometry.coordinates[0], location.geometry.coordinates[1]]);
+
+    setMapCenter([location.geometry.coordinates[0], location.geometry.coordinates[1]])
+
+  }
+
   return (
     <>
       <div className="flex justify-between items-center p-10 bg-gradient-to-r from-blue-50 to-blue-100">
@@ -133,9 +146,20 @@ export default function Home() {
           <div>
             <p>ลำดับที่ {offsetData + 1} - {offsetData + perPage}</p>
           </div>
-          <div className="join">
-            <button className="join-item btn" onClick={() => setViewType('list')}><List />List View</button>
-            <button className="join-item btn" onClick={() => setViewType('map')}><Map />Map View</button>
+          <div className="flex items-center gap-2">
+            {currentLocation && viewType === "map" && mapCenter && (
+              <button className="btn btn-primary" onClick={toRounting}>
+                <Route size={20} /> เส้นทาง
+              </button>
+            )}
+            <div className="join flex items-center">
+              <button className="join-item btn" onClick={() => setViewType('list')}>
+                <List /> List View
+              </button>
+              <button className="join-item btn" onClick={() => setViewType('map')}>
+                <Map /> Map View
+              </button>
+            </div>
           </div>
 
         </div>
@@ -148,7 +172,7 @@ export default function Home() {
           </>
         ) : (
           <div className='py-6'>
-            <MapView locations={locations} mapCenter={mapCenter} currentLocation={currentLocation} />
+            <MapView ref={mapRef} locations={locations} mapCenter={mapCenter} currentLocation={currentLocation} setNewCenter={setNewCenter} />
           </div>
         )}
         <div className='flex justify-center mt-4'>

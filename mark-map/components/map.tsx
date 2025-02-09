@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Marker, Popup } from 'maplibre-gl';
+import MapLibreGlDirections, { LoadingIndicatorControl } from "@maplibre/maplibre-gl-directions";
 
 type Location = {
     id: string
@@ -16,9 +17,20 @@ type Location = {
     }
 };
 
-export default function MapView({ locations, mapCenter, currentLocation }: { locations: Location[] | [], mapCenter?: [number, number], currentLocation: [number, number] | null }) {
+interface MapViewProps {
+    locations: Location[];
+    mapCenter?: [number, number];
+    currentLocation: [number, number] | null;
+    setNewCenter: (locations: Location) => void
+}
 
+export interface MapViewRef {
+    toRouting: () => void;
+}
+
+const MapView = forwardRef<MapViewRef, MapViewProps>(({ locations, mapCenter, currentLocation, setNewCenter }, ref) => {
     const mapRef = useRef<maplibregl.Map | null>(null);
+    const diractionRef = useRef<MapLibreGlDirections | null>(null)
 
     useEffect(() => {
 
@@ -28,7 +40,7 @@ export default function MapView({ locations, mapCenter, currentLocation }: { loc
             center: mapCenter || [0, 0],
             zoom: 1
         });
-
+        diractionRef.current = null
         mapRef.current = map;
 
         locations.forEach(location => {
@@ -74,7 +86,11 @@ export default function MapView({ locations, mapCenter, currentLocation }: { loc
                         <p>Coordinates: latitude: ${location.geometry.coordinates[1].toFixed(6)}, longitude: ${location.geometry.coordinates[0].toFixed(6)}</p><br/>
                         <a  href="https://www.google.com/search?q=${location.properties.ct_tn}" target="_blank"}>ข้อมูลเพิ่มเติม</a>
                     `))
-                    .addTo(map);
+
+                    .addTo(map)
+                    .getElement().addEventListener('click', () => {
+                        newCenter(location)
+                    })
 
             }
         });
@@ -97,7 +113,6 @@ export default function MapView({ locations, mapCenter, currentLocation }: { loc
 
         return () => map.remove();
     }, [locations, currentLocation]);
-
     useEffect(() => {
         if (!mapRef.current || !mapCenter) return;
         const map = mapRef.current;
@@ -107,10 +122,48 @@ export default function MapView({ locations, mapCenter, currentLocation }: { loc
 
     }, [mapCenter]);
 
+    useImperativeHandle(ref, () => ({
+        toRouting: () => {
+            if (!mapRef.current || !mapCenter) return;
+            if (!diractionRef.current) {
+                const map = mapRef.current;
+                const directions = new MapLibreGlDirections(map);
+                diractionRef.current = directions
+            }
+            if (currentLocation && mapCenter) {
+                console.log("toRouting", currentLocation, mapCenter);
+                const map = mapRef.current;
+                const directions = diractionRef.current;
+
+                if (directions) {
+                    directions.clear();
+
+                    // Enable interactivity (if needed)
+                    directions.interactive = false;
+
+                    // Optionally add the standard loading-indicator control
+                    map.addControl(new LoadingIndicatorControl(directions));
+
+                    directions.setWaypoints([
+                        currentLocation,
+                        mapCenter,
+                    ]);
+                }
+            }
+        },
+    }));
+
+    const newCenter = (location: Location) => {
+        setNewCenter(location)
+    }
 
     return (
-        <>
-            <div id="map" className="w-full" style={{ height: 550 }} />
-        </>
+
+        <div id="map" className="w-full" style={{ height: 550 }} />
     )
 }
+
+)
+MapView.displayName = 'MapView';
+
+export default MapView;

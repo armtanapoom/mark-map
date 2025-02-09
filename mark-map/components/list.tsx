@@ -47,7 +47,7 @@ export default function ListView({ locations, selectLocation }: { locations: Loc
 
         const distance = R * c;
 
-        return `${distance.toFixed(2)} KM.`;
+        return `~ ${distance.toFixed(2)} KM.`;
     }
     return (
         <>

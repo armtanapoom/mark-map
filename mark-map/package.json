@@ -11,6 +11,7 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
+    "@maplibre/maplibre-gl-directions": "^0.7.2",
     "@mui/material": "^6.4.3",
     "axios": "^1.7.9",
     "lucide-react": "^0.474.0",
